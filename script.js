@@ -371,10 +371,9 @@ window.addEventListener("load", async () => {
 ════════════════════════════════════════════ */
 async function loadHotspots() {
   try {
-    const res = await fetch("http://localhost:5000/hotspots");
+    const res = await fetch("hotspots.json");
     HOTSPOTS  = await res.json();
     console.log("✅ Loaded", HOTSPOTS.length, "hotspots from server");
-    populateLocationDropdowns();
   } catch {
     console.warn("⚠️ Server not reachable — using embedded fallback.");
     HOTSPOTS = [
@@ -404,435 +403,7 @@ async function loadHotspots() {
       {name:"Secunderabad Station",aliases:["secunderabad","secunderabad station","secundrabad","secbad"],lat:17.4399,lng:78.4983,weight:7,risk:"med",zone:"North"},
       {name:"Nagole",aliases:["nagole","nagol","nagole junction"],lat:17.376,lng:78.558,weight:8,risk:"high",zone:"East"}
     ];
-    populateLocationDropdowns();
   }
-}
-
-/* ════════════════════════════════════════════
-   LOCATION DROPDOWNS — datalist + compare selects
-════════════════════════════════════════════ */
-/* ════════════════════════════════════════════
-   📍 ALL HYDERABAD LOCATIONS FOR DROPDOWN
-════════════════════════════════════════════ */
-const HYD_PLACES = [
-  // ── OLD CITY / SOUTH ──
-  {name:"Charminar",zone:"Old City",risk:"high"},
-  {name:"Madina",zone:"Old City",risk:"high"},
-  {name:"Puranapool",zone:"Old City",risk:"high"},
-  {name:"Charkaman",zone:"Old City",risk:"med"},
-  {name:"Shalibanda",zone:"Old City",risk:"med"},
-  {name:"Koti",zone:"Old City",risk:"high"},
-  {name:"Sultan Bazar",zone:"Old City",risk:"med"},
-  {name:"Moazzam Jahi Market",zone:"Old City",risk:"med"},
-  {name:"Nampally",zone:"Central",risk:"high"},
-  {name:"Abids",zone:"Central",risk:"high"},
-  {name:"Lakdikapul",zone:"Central",risk:"high"},
-  {name:"Khairatabad",zone:"Central",risk:"high"},
-  {name:"Mehdipatnam",zone:"South West",risk:"high"},
-  {name:"Attapur",zone:"South West",risk:"med"},
-  {name:"Rajendranagar",zone:"South West",risk:"med"},
-  {name:"Shamshabad",zone:"South",risk:"med"},
-  {name:"Shamirpet",zone:"North",risk:"low"},
-  {name:"Falaknuma",zone:"Old City",risk:"med"},
-  {name:"Chandrayangutta",zone:"Old City",risk:"med"},
-  {name:"Santoshnagar",zone:"South",risk:"med"},
-  {name:"Dilsukhnagar",zone:"South East",risk:"high"},
-  {name:"Kothapet",zone:"South East",risk:"med"},
-  {name:"Mallapur",zone:"East",risk:"med"},
-  {name:"Uppal",zone:"East",risk:"high"},
-  {name:"ECIL",zone:"East",risk:"med"},
-  {name:"AS Rao Nagar",zone:"East",risk:"med"},
-  {name:"Habsiguda",zone:"East",risk:"med"},
-  {name:"Tarnaka",zone:"East",risk:"med"},
-  {name:"Mettuguda",zone:"North East",risk:"med"},
-  {name:"Nacharam",zone:"East",risk:"med"},
-  {name:"Nagole",zone:"East",risk:"high"},
-  {name:"LB Nagar",zone:"South East",risk:"high"},
-  {name:"Hayathnagar",zone:"South East",risk:"high"},
-  {name:"Vanasthalipuram",zone:"South East",risk:"high"},
-  {name:"Abdullapurmet",zone:"South East",risk:"high"},
-  {name:"Saroornagar",zone:"South East",risk:"med"},
-  {name:"Bandlaguda",zone:"South",risk:"med"},
-  {name:"Meerpet",zone:"South East",risk:"med"},
-  // ── CENTRAL ──
-  {name:"Hyderguda",zone:"Central",risk:"high"},
-  {name:"Himayatnagar",zone:"Central",risk:"med"},
-  {name:"Narayanguda",zone:"Central",risk:"med"},
-  {name:"Musheerabad",zone:"Central",risk:"med"},
-  {name:"Chilkalguda",zone:"Central",risk:"med"},
-  {name:"Amberpet",zone:"Central",risk:"med"},
-  {name:"Malakpet",zone:"Central",risk:"med"},
-  {name:"Chaderghat",zone:"Central",risk:"med"},
-  {name:"Dabeerpura",zone:"Old City",risk:"med"},
-  {name:"King Koti",zone:"Central",risk:"med"},
-  {name:"Basheerbagh",zone:"Central",risk:"med"},
-  {name:"Ameerpet",zone:"Central",risk:"high"},
-  {name:"Punjagutta",zone:"Central",risk:"high"},
-  {name:"Somajiguda",zone:"Central",risk:"med"},
-  {name:"Raj Bhavan Road",zone:"Central",risk:"low"},
-  {name:"Necklace Road",zone:"Central",risk:"low"},
-  {name:"Hussain Sagar",zone:"Central",risk:"low"},
-  {name:"Tank Bund",zone:"Central",risk:"med"},
-  // ── NORTH ──
-  {name:"Secunderabad",zone:"North",risk:"med"},
-  {name:"Secunderabad Station",zone:"North",risk:"med"},
-  {name:"Begumpet",zone:"North",risk:"med"},
-  {name:"Marredpally",zone:"North",risk:"med"},
-  {name:"Trimulgherry",zone:"North East",risk:"med"},
-  {name:"Bowenpally",zone:"North",risk:"med"},
-  {name:"Alwal",zone:"North",risk:"med"},
-  {name:"Yapral",zone:"North East",risk:"low"},
-  {name:"Malkajgiri",zone:"North East",risk:"med"},
-  {name:"Sainikpuri",zone:"North East",risk:"low"},
-  {name:"Kompally",zone:"North",risk:"low"},
-  {name:"Medchal",zone:"North",risk:"med"},
-  {name:"Ghatkesar",zone:"East",risk:"med"},
-  {name:"Kapra",zone:"North East",risk:"med"},
-  {name:"Dammaiguda",zone:"North East",risk:"low"},
-  {name:"Ramanthapur",zone:"East",risk:"med"},
-  {name:"Neredmet",zone:"North East",risk:"med"},
-  {name:"Keesara",zone:"North East",risk:"low"},
-  {name:"Dundigal",zone:"North",risk:"low"},
-  {name:"Quthbullapur",zone:"North West",risk:"med"},
-  {name:"Balanagar",zone:"North West",risk:"med"},
-  {name:"Jeedimetla",zone:"North West",risk:"med"},
-  {name:"IDA Jeedimetla",zone:"North West",risk:"med"},
-  {name:"Pragathinagar",zone:"North West",risk:"low"},
-  {name:"Bachupally",zone:"North West",risk:"low"},
-  {name:"Nizampet",zone:"North West",risk:"med"},
-  {name:"Hafeezpet",zone:"North West",risk:"med"},
-  {name:"Chandanagar",zone:"North West",risk:"med"},
-  {name:"Miyapur",zone:"North West",risk:"high"},
-  {name:"Miyapur Junction",zone:"North West",risk:"high"},
-  {name:"BHEL",zone:"North West",risk:"med"},
-  {name:"Patancheru",zone:"North West",risk:"med"},
-  {name:"Sangareddy",zone:"North West",risk:"med"},
-  {name:"Kukatpally",zone:"North West",risk:"med"},
-  {name:"KPHB",zone:"North West",risk:"med"},
-  {name:"JNTU Kukatpally",zone:"North West",risk:"med"},
-  // ── WEST / IT CORRIDOR ──
-  {name:"Gachibowli",zone:"West",risk:"high"},
-  {name:"Madhapur",zone:"West",risk:"high"},
-  {name:"HITEC City",zone:"West",risk:"high"},
-  {name:"Cyberabad",zone:"West",risk:"med"},
-  {name:"Kondapur",zone:"West",risk:"high"},
-  {name:"Raidurgam",zone:"West",risk:"med"},
-  {name:"Nanakramguda",zone:"West",risk:"med"},
-  {name:"Financial District",zone:"West",risk:"med"},
-  {name:"Kokapet",zone:"West",risk:"med"},
-  {name:"Narsingi",zone:"South West",risk:"low"},
-  {name:"Puppalaguda",zone:"South West",risk:"low"},
-  {name:"Manikonda",zone:"South West",risk:"med"},
-  {name:"Kollur",zone:"West",risk:"low"},
-  {name:"Tellapur",zone:"West",risk:"low"},
-  {name:"Osman Nagar",zone:"West",risk:"low"},
-  {name:"Serilingampally",zone:"West",risk:"med"},
-  {name:"Lingampally",zone:"North West",risk:"med"},
-  {name:"Yousufguda",zone:"West",risk:"med"},
-  {name:"Jubilee Hills",zone:"West",risk:"high"},
-  {name:"Banjara Hills",zone:"West",risk:"high"},
-  {name:"Road No 12 Banjara Hills",zone:"West",risk:"med"},
-  {name:"Panjagutta",zone:"Central",risk:"high"},
-  {name:"Erragadda",zone:"West",risk:"med"},
-  {name:"ESI Hospital",zone:"West",risk:"med"},
-  {name:"SR Nagar",zone:"West",risk:"med"},
-  {name:"Sanjeeva Reddy Nagar",zone:"West",risk:"med"},
-  // ── ORR / RING ROADS ──
-  {name:"ORR 144.5 km",zone:"ORR West",risk:"high"},
-  {name:"ORR 14 km",zone:"ORR North",risk:"high"},
-  {name:"ORR Gachibowli",zone:"ORR South West",risk:"med"},
-  {name:"ORR Shamshabad",zone:"ORR South",risk:"med"},
-  {name:"ORR Patancheru",zone:"ORR West",risk:"high"},
-  {name:"ORR Tolichowki",zone:"ORR South West",risk:"med"},
-  {name:"Tolichowki",zone:"South West",risk:"high"},
-  {name:"Rethibowli",zone:"South West",risk:"med"},
-  {name:"Masab Tank",zone:"Central",risk:"med"},
-  {name:"Asif Nagar",zone:"South West",risk:"med"},
-  {name:"Karwan",zone:"South",risk:"med"},
-  {name:"Santosh Nagar X Roads",zone:"South",risk:"med"},
-  // ── AIRPORT / SOUTH ──
-  {name:"Rajiv Gandhi International Airport",zone:"South",risk:"low"},
-  {name:"Shamshabad Airport",zone:"South",risk:"low"},
-  {name:"Shamshabad X Roads",zone:"South",risk:"med"},
-  {name:"Budvel",zone:"South",risk:"low"},
-  {name:"Kismatpur",zone:"South",risk:"low"},
-  {name:"Tukkuguda",zone:"South",risk:"low"},
-  {name:"Pedda Amberpet",zone:"South East",risk:"low"},
-  // ── RACHAKONDA / EAST SUBURBS ──
-  {name:"Rachakonda",zone:"ORR East",risk:"high"},
-  {name:"Boduppal",zone:"East",risk:"med"},
-  {name:"Peerzadiguda",zone:"East",risk:"med"},
-  {name:"Kushaiguda",zone:"East",risk:"med"},
-  {name:"Cherlapally",zone:"East",risk:"med"},
-  {name:"Medipally",zone:"East",risk:"low"},
-  {name:"Bhongir",zone:"East",risk:"low"},
-  // ── TRANSIT HUBS ──
-  {name:"Hyderabad Railway Station",zone:"Central",risk:"med"},
-  {name:"Kachiguda Station",zone:"Central",risk:"med"},
-  {name:"Lingampally Station",zone:"North West",risk:"med"},
-  {name:"Moula Ali",zone:"East",risk:"med"},
-  {name:"LB Nagar Metro",zone:"South East",risk:"med"},
-  {name:"Hitec City Metro",zone:"West",risk:"med"},
-  {name:"Ameerpet Metro",zone:"Central",risk:"high"},
-  {name:"Paradise",zone:"North",risk:"med"},
-  {name:"Paradise Circle",zone:"North",risk:"med"},
-  {name:"SD Road",zone:"North",risk:"med"},
-  {name:"Clock Tower Secunderabad",zone:"North",risk:"med"},
-  {name:"Patny Center",zone:"North",risk:"med"},
-];
-
-function getAllDropdownLocations() {
-  // Merge HOTSPOTS + HYD_PLACES, deduplicate by name
-  const seen = new Set();
-  const merged = [];
-  [...HOTSPOTS, ...HYD_PLACES].forEach(h => {
-    const key = h.name.toLowerCase();
-    if (!seen.has(key)) { seen.add(key); merged.push(h); }
-  });
-  return merged.sort((a, b) => a.name.localeCompare(b.name));
-}
-
-/* ── Inject custom dropdown CSS once ── */
-(function injectDropdownCSS() {
-  if (document.getElementById("rakshak-dd-css")) return;
-  const s = document.createElement("style");
-  s.id = "rakshak-dd-css";
-  s.textContent = `
-    .rk-dd { position:relative; width:100%; font-family:var(--font); }
-    .rk-dd-trigger {
-      display:flex; align-items:center; justify-content:space-between;
-      width:100%; padding:10px 14px;
-      background:var(--surface); color:var(--text);
-      border:1.5px solid var(--border); border-radius:var(--radius);
-      font-size:13px; font-family:var(--font); cursor:pointer;
-      transition:border-color 0.2s, box-shadow 0.2s;
-      user-select:none; gap:8px;
-    }
-    .rk-dd-trigger:hover { border-color:var(--accent); }
-    .rk-dd-trigger.open {
-      border-color:var(--accent);
-      box-shadow:0 0 0 3px var(--accent-glow);
-      border-radius:var(--radius) var(--radius) 0 0;
-    }
-    .rk-dd-trigger .rk-dd-val { flex:1; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .rk-dd-trigger .rk-dd-val.placeholder { color:var(--text3); }
-    .rk-dd-caret { flex-shrink:0; font-size:10px; color:var(--text3); transition:transform 0.2s; }
-    .rk-dd-trigger.open .rk-dd-caret { transform:rotate(180deg); }
-    .rk-dd-panel {
-      position:absolute; top:100%; left:0; right:0; z-index:9999;
-      background:var(--surface); border:1.5px solid var(--accent);
-      border-top:none; border-radius:0 0 var(--radius) var(--radius);
-      box-shadow:0 8px 24px rgba(0,0,0,0.13);
-      overflow:hidden; animation:ddSlide 0.15s ease;
-    }
-    @keyframes ddSlide { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
-    .rk-dd-search-wrap {
-      display:flex; align-items:center; gap:8px;
-      padding:8px 12px; border-bottom:1px solid var(--border);
-      background:var(--surface2);
-    }
-    .rk-dd-search-wrap span { font-size:13px; color:var(--text3); flex-shrink:0; }
-    .rk-dd-search {
-      flex:1; border:none; outline:none; background:transparent;
-      font-family:var(--font); font-size:13px; color:var(--text);
-    }
-    .rk-dd-search::placeholder { color:var(--text3); }
-    .rk-dd-list { max-height:220px; overflow-y:auto; }
-    .rk-dd-list::-webkit-scrollbar { width:4px; }
-    .rk-dd-list::-webkit-scrollbar-track { background:var(--surface2); }
-    .rk-dd-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:99px; }
-    .rk-dd-item {
-      display:flex; align-items:center; justify-content:space-between;
-      padding:9px 14px; cursor:pointer; transition:background 0.12s;
-      font-size:13px; color:var(--text); gap:8px;
-    }
-    .rk-dd-item:hover, .rk-dd-item.focused { background:var(--surface2); }
-    .rk-dd-item.selected { background:var(--accent-glow); color:var(--accent); font-weight:600; }
-    .rk-dd-item .rk-dd-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .rk-dd-item .rk-dd-zone {
-      font-size:10px; color:var(--text3); background:var(--surface2);
-      border:1px solid var(--border); border-radius:99px;
-      padding:2px 7px; white-space:nowrap; flex-shrink:0;
-    }
-    .rk-dd-item.selected .rk-dd-zone { background:var(--accent-glow); border-color:var(--accent); color:var(--accent); }
-    .rk-dd-item .rk-risk { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
-    .rk-dd-empty { padding:14px; text-align:center; font-size:12px; color:var(--text3); }
-    /* Main search bar custom dropdown */
-    .rk-dd-main .rk-dd-trigger {
-      border:none; background:transparent; padding:11px 0;
-      box-shadow:none !important;
-    }
-    .rk-dd-main .rk-dd-trigger.open { border-radius:0; }
-    .rk-dd-main .rk-dd-panel { border-radius:0 0 var(--radius) var(--radius); }
-  `;
-  document.head.appendChild(s);
-})();
-
-function createRakshakDropdown({ id, placeholder, isMain = false, mb = false }) {
-  const wrap = document.createElement("div");
-  wrap.className = "rk-dd" + (isMain ? " rk-dd-main" : "");
-  if (mb) wrap.style.marginBottom = "6px";
-
-  wrap.innerHTML = `
-    <div class="rk-dd-trigger" id="${id}-trigger" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
-      <span class="rk-dd-val placeholder">${placeholder}</span>
-      <span class="rk-dd-caret">▼</span>
-    </div>
-    <div class="rk-dd-panel" id="${id}-panel" style="display:none;" role="listbox">
-      <div class="rk-dd-search-wrap">
-        <span>🔍</span>
-        <input class="rk-dd-search" id="${id}-search" placeholder="Search location…" autocomplete="off" />
-      </div>
-      <div class="rk-dd-list" id="${id}-list"></div>
-    </div>
-  `;
-
-  // Hidden value holder
-  const hidden = document.createElement("input");
-  hidden.type = "hidden";
-  hidden.id = id;
-  wrap.appendChild(hidden);
-
-  return wrap;
-}
-
-function initRakshakDropdown(id) {
-  const trigger = document.getElementById(id + "-trigger");
-  const panel   = document.getElementById(id + "-panel");
-  const search  = document.getElementById(id + "-search");
-  const list    = document.getElementById(id + "-list");
-  const hidden  = document.getElementById(id);
-  if (!trigger || !panel) return;
-
-  const riskColor = r => r === "high" ? "#e74c3c" : r === "med" ? "#e67e22" : "#27ae60";
-
-  function renderList(filter = "") {
-    const q = filter.toLowerCase();
-    const all = getAllDropdownLocations();
-    const filtered = all.filter(h => h.name.toLowerCase().includes(q) || h.zone.toLowerCase().includes(q));
-    if (!filtered.length) {
-      list.innerHTML = `<div class="rk-dd-empty">No locations found</div>`;
-      return;
-    }
-    list.innerHTML = filtered.map(h => `
-      <div class="rk-dd-item${hidden.value === h.name ? " selected" : ""}" data-val="${h.name}" role="option">
-        <span class="rk-risk" style="background:${riskColor(h.risk)}"></span>
-        <span class="rk-dd-name">${h.name}</span>
-        <span class="rk-dd-zone">${h.zone}</span>
-      </div>`).join("");
-    list.querySelectorAll(".rk-dd-item").forEach(item => {
-      item.addEventListener("click", () => selectVal(item.dataset.val));
-    });
-  }
-
-  function selectVal(val) {
-    hidden.value = val;
-    trigger.querySelector(".rk-dd-val").textContent = val;
-    trigger.querySelector(".rk-dd-val").classList.remove("placeholder");
-    close();
-  }
-
-  function open() {
-    panel.style.display = "block";
-    trigger.classList.add("open");
-    trigger.setAttribute("aria-expanded", "true");
-    renderList();
-    search.value = "";
-    search.focus();
-  }
-
-  function close() {
-    panel.style.display = "none";
-    trigger.classList.remove("open");
-    trigger.setAttribute("aria-expanded", "false");
-  }
-
-  trigger.addEventListener("click", () => panel.style.display === "none" ? open() : close());
-  trigger.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } });
-  search.addEventListener("input", () => renderList(search.value));
-  document.addEventListener("click", e => { if (!trigger.closest(".rk-dd").contains(e.target)) close(); });
-  renderList();
-}
-
-function populateLocationDropdowns() {
-  // 1. Main search bar — upgrade to custom dropdown
-  ["start", "end"].forEach(id => {
-    const orig = document.getElementById(id);
-    if (!orig || orig.dataset.rkUpgraded) return;
-    orig.dataset.rkUpgraded = "1";
-
-    const ph = id === "start"
-      ? "Start location…"
-      : "Destination…";
-
-    // Build wrapper inside .input-group
-    const inputGroup = orig.closest(".input-group");
-    if (!inputGroup) return;
-
-    // Replace input with custom dropdown trigger (stays inside input-group styling)
-    const ddWrap = createRakshakDropdown({ id: "rk-" + id, placeholder: ph, isMain: true });
-    inputGroup.replaceChild(ddWrap, orig);
-
-    // Keep original hidden input for geocode compatibility — map rk-start→start
-    const hidden = ddWrap.querySelector("input[type=hidden]");
-    hidden.addEventListener("change", () => {});
-    // Proxy: findRoute reads #start / #end → redirect to rk-start / rk-end
-    const proxy = document.createElement("input");
-    proxy.type = "hidden";
-    proxy.id = id;
-    proxy.style.display = "none";
-    hidden.addEventListener("input", () => proxy.value = hidden.value);
-    // Sync on selection
-    const origId = id;
-    const observer = new MutationObserver(() => { proxy.value = hidden.value; });
-    observer.observe(hidden, { attributes: true });
-    document.body.appendChild(proxy);
-
-    // Override trigger click to also sync proxy
-    const trigger = ddWrap.querySelector(".rk-dd-trigger");
-    ddWrap.querySelectorAll(".rk-dd-item");
-
-    // Patch selectVal to update proxy
-    const panelEl = ddWrap.querySelector(".rk-dd-panel");
-    panelEl.addEventListener("click", e => {
-      const item = e.target.closest(".rk-dd-item");
-      if (item) { proxy.value = item.dataset.val; hidden.value = item.dataset.val; }
-    });
-
-    initRakshakDropdown("rk-" + id);
-  });
-
-  // 2. Compare tab dropdowns
-  ["cmp-a-start","cmp-a-end","cmp-b-start","cmp-b-end"].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el || el.dataset.rkUpgraded) return;
-
-    const isStart = id.includes("start");
-    const letter  = id.includes("-a-") ? "A" : "B";
-    const ph      = isStart ? `Start ${letter}` : `End ${letter}`;
-
-    const ddWrap = createRakshakDropdown({ id, placeholder: ph, mb: isStart });
-    el.parentNode.replaceChild(ddWrap, el);
-
-    // Re-add id on hidden input so runRouteComparison can read .value
-    ddWrap.querySelector("input[type=hidden]").id = id;
-    ddWrap.querySelector(".rk-dd-trigger").id = id + "-trigger";
-    ddWrap.querySelector(".rk-dd-panel").id   = id + "-panel";
-    ddWrap.querySelector(".rk-dd-search").id  = id + "-search";
-    ddWrap.querySelector(".rk-dd-list").id    = id + "-list";
-
-    ddWrap.dataset.rkUpgraded = "1";
-    initRakshakDropdown(id);
-  });
-}
-
-/* ── Patch geocode to also read rk-start/rk-end hidden inputs ── */
-const _origGeocodeRef = window._rakshakGeocodePatched;
-if (!_origGeocodeRef) {
-  window._rakshakGeocodePatched = true;
-  const _geoOrig = window.geocode;
-  // geocode is defined later; patch findRoute's input reads via override
-  const _origFindRoute = window.findRoute;
 }
 
 /* ════════════════════════════════════════════
@@ -1031,19 +602,8 @@ function injectQuickChips() {
     chip.onmouseenter = () => { chip.style.borderColor = "var(--accent)"; chip.style.color = "var(--accent)"; };
     chip.onmouseleave = () => { chip.style.borderColor = "var(--border)"; chip.style.color = "var(--text2)"; };
     chip.onclick = () => {
-      // Set custom dropdown hidden inputs
-      const rkStart = document.getElementById("rk-start");
-      const rkEnd   = document.getElementById("rk-end");
-      if (rkStart) {
-        rkStart.value = from;
-        const t = document.getElementById("rk-start-trigger");
-        if (t) { t.querySelector(".rk-dd-val").textContent = from; t.querySelector(".rk-dd-val").classList.remove("placeholder"); }
-      }
-      if (rkEnd) {
-        rkEnd.value = to;
-        const t = document.getElementById("rk-end-trigger");
-        if (t) { t.querySelector(".rk-dd-val").textContent = to; t.querySelector(".rk-dd-val").classList.remove("placeholder"); }
-      }
+      document.getElementById("start").value = from;
+      document.getElementById("end").value   = to;
       findRoute();
     };
     chipsContainer.appendChild(chip);
@@ -1105,8 +665,8 @@ let _altDurMin      = null;
 let _altScore       = null;
 
 async function findRoute() {
-  const startVal = (document.getElementById("rk-start") || document.getElementById("start"))?.value.trim();
-  const endVal   = (document.getElementById("rk-end")   || document.getElementById("end"))?.value.trim();
+  const startVal = document.getElementById("start").value.trim();
+  const endVal   = document.getElementById("end").value.trim();
   if (!startVal || !endVal) { alert(t().enterBoth); return; }
 
   setLoader(true);
@@ -1866,13 +1426,13 @@ function injectCompareTab() {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
         <div>
           <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;">ROUTE A</div>
-          <input id="cmp-a-start" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:var(--font);font-size:13px;margin-bottom:6px;cursor:pointer;" disabled placeholder="Loading locations…"/>
-          <input id="cmp-a-end" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:var(--font);font-size:13px;cursor:pointer;" disabled placeholder="Loading locations…"/>
+          <input id="cmp-a-start" placeholder="Start A (e.g. Miyapur)" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:var(--font);font-size:13px;margin-bottom:6px;"/>
+          <input id="cmp-a-end" placeholder="End A (e.g. LB Nagar)" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:var(--font);font-size:13px;"/>
         </div>
         <div>
           <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;">ROUTE B</div>
-          <input id="cmp-b-start" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:var(--font);font-size:13px;margin-bottom:6px;cursor:pointer;" disabled placeholder="Loading locations…"/>
-          <input id="cmp-b-end" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:var(--font);font-size:13px;cursor:pointer;" disabled placeholder="Loading locations…"/>
+          <input id="cmp-b-start" placeholder="Start B (e.g. Gachibowli)" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:var(--font);font-size:13px;margin-bottom:6px;"/>
+          <input id="cmp-b-end" placeholder="End B (e.g. Madina)" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:var(--font);font-size:13px;"/>
         </div>
       </div>
 
@@ -1882,8 +1442,6 @@ function injectCompareTab() {
     `;
     const panelHistory = document.getElementById("panel-history");
     if (panelHistory) panelHistory.parentNode.insertBefore(panel, panelHistory.nextSibling);
-    // Populate selects if hotspots already loaded
-    if (HOTSPOTS.length) populateLocationDropdowns();
   }
 }
 
@@ -1951,54 +1509,19 @@ async function runRouteComparison() {
     const timeIcons = ["🌅","☀️","🌆","🌙"];
     const timeNames = ["Morning","Afternoon","Evening","Night"];
 
-    // Helper: render a mini bar for the Compare column
-    function compareBar(sa, sb) {
-      // Lower score = safer = green; higher score = riskier = red
-      const saferIsA = sa <= sb;
-      const saferScore = Math.min(sa, sb);
-      const riskierScore = Math.max(sa, sb);
-      const saferLabel  = saferIsA ? "A" : "B";
-      const riskierLabel = saferIsA ? "B" : "A";
-      const diff = riskierScore - saferScore;
-      // Bar widths proportional to score (out of 100)
-      const saferW  = Math.round(saferScore);
-      const riskierW = Math.round(riskierScore);
-      return `
-        <div style="display:flex;flex-direction:column;gap:4px;min-width:140px;">
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:10px;color:#27ae60;font-weight:700;min-width:14px;">A${saferLabel==="A"?"✓":""}</span>
-            <div style="flex:1;background:#e8f5e9;border-radius:4px;height:14px;overflow:hidden;" title="Route ${saferLabel}: ${saferScore}/100 — Safer">
-              <div style="width:${saferW}%;height:100%;background:linear-gradient(90deg,#27ae60,#2ecc71);border-radius:4px;transition:width 0.5s;"></div>
-            </div>
-            <span style="font-size:10px;color:#27ae60;font-weight:700;min-width:28px;">${saferScore}</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:10px;color:#e74c3c;font-weight:700;min-width:14px;">B${riskierLabel==="B"?"✗":""}</span>
-            <div style="flex:1;background:#fdecea;border-radius:4px;height:14px;overflow:hidden;" title="Route ${riskierLabel}: ${riskierScore}/100 — Riskier">
-              <div style="width:${riskierW}%;height:100%;background:linear-gradient(90deg,#e74c3c,#c0392b);border-radius:4px;transition:width 0.5s;"></div>
-            </div>
-            <span style="font-size:10px;color:#e74c3c;font-weight:700;min-width:28px;">${riskierScore}</span>
-          </div>
-          <div style="font-size:9px;color:#888;text-align:right;">Δ ${diff} pts · <span style="color:#27ae60;">green=safer</span></div>
-        </div>`;
-    }
-
     resultsEl.innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
-        <div style="font-size:15px;font-weight:600;color:var(--text);">
-          Results: ${sA.label}→${eA.label} vs ${sB.label}→${eB.label}
-          <span style="margin-left:10px;background:${winner==="A"?"#27ae60":"#3498db"};color:#fff;font-size:11px;padding:3px 10px;border-radius:99px;">🏆 Route ${winner} Wins</span>
-        </div>
-        <button onclick="downloadCompareChart()" style="background:linear-gradient(135deg,#27ae60,#1e8449);color:#fff;border:none;border-radius:var(--radius);padding:8px 16px;font-size:12px;font-weight:600;font-family:var(--font);cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(39,174,96,0.35);">⬇️ Download Chart</button>
+      <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px;">
+        Results: ${sA.label}→${eA.label} vs ${sB.label}→${eB.label}
+        <span style="margin-left:10px;background:${winner==="A"?"#27ae60":"#3498db"};color:#fff;font-size:11px;padding:3px 10px;border-radius:99px;">🏆 Route ${winner} Wins</span>
       </div>
       <div style="overflow-x:auto;">
-        <table id="cmpTable" style="width:100%;border-collapse:collapse;font-size:13px;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
           <thead>
             <tr style="background:var(--surface2);">
               <th style="padding:10px 12px;text-align:left;color:var(--text2);font-weight:600;">Time</th>
               <th style="padding:10px 12px;text-align:center;color:var(--text2);font-weight:600;">Route A: ${sA.label}→${eA.label}</th>
               <th style="padding:10px 12px;text-align:center;color:var(--text2);font-weight:600;">Route B: ${sB.label}→${eB.label}</th>
-              <th style="padding:10px 12px;text-align:center;color:var(--text2);font-weight:600;">Compare <span style="font-size:10px;font-weight:400;color:#27ae60;">🟢 safer</span> <span style="font-size:10px;font-weight:400;color:#e74c3c;">🔴 riskier</span></th>
+              <th style="padding:10px 12px;text-align:center;color:var(--text2);font-weight:600;">Winner</th>
             </tr>
           </thead>
           <tbody>
@@ -2011,151 +1534,24 @@ async function runRouteComparison() {
                 <td style="padding:10px 12px;color:var(--text2);">${timeIcons[i]} ${timeNames[i]}</td>
                 <td style="padding:10px 12px;text-align:center;font-weight:700;color:${colA};">${sa}/100</td>
                 <td style="padding:10px 12px;text-align:center;font-weight:700;color:${colB};">${sb}/100</td>
-                <td style="padding:10px 14px;">${compareBar(sa, sb)}</td>
+                <td style="padding:10px 12px;text-align:center;font-weight:600;color:${w==="A"?"#27ae60":"#3498db"};">Route ${w}</td>
               </tr>`;
             }).join("")}
             <tr style="background:var(--surface2);font-weight:700;">
               <td style="padding:10px 12px;color:var(--text);">📊 Average</td>
               <td style="padding:10px 12px;text-align:center;color:${avgA>=60?"#e74c3c":avgA>=35?"#e67e22":"#27ae60"};">${avgA}/100</td>
               <td style="padding:10px 12px;text-align:center;color:${avgB>=60?"#e74c3c":avgB>=35?"#e67e22":"#27ae60"};">${avgB}/100</td>
-              <td style="padding:10px 14px;">${compareBar(avgA, avgB)}</td>
+              <td style="padding:10px 12px;text-align:center;color:${winner==="A"?"#27ae60":"#3498db"};">🏆 Route ${winner}</td>
             </tr>
           </tbody>
         </table>
       </div>
       <div style="margin-top:10px;font-size:11px;color:var(--text3);font-style:italic;">
-        Scores use v7 formula with live weather (${weather.label}). Green bars = safer route · Red bars = higher risk. Differences may vary by real-time conditions.
+        Scores use v7 formula with live weather (${weather.label}). Differences may vary by real-time conditions.
       </div>`;
-
-    // Store data for chart download
-    window._lastCompareData = {
-      labelA: `${sA.label}→${eA.label}`,
-      labelB: `${sB.label}→${eB.label}`,
-      times: timeNames,
-      icons: timeIcons,
-      scoresA: scoresA.map(x => x.score),
-      scoresB: scoresB.map(x => x.score),
-      avgA, avgB, winner,
-      weather: weather.label
-    };
   } catch(err) {
     resultsEl.innerHTML = `<div style="color:#e74c3c;font-size:13px;padding:12px;">${err.message}</div>`;
   }
-}
-
-/* ════════════════════════════════════════════
-   📊 DOWNLOAD COMPARE CHART (Canvas → PNG)
-════════════════════════════════════════════ */
-function downloadCompareChart() {
-  const d = window._lastCompareData;
-  if (!d) { showToast("Run a comparison first!"); return; }
-
-  const allTimes = [...d.times, "Average"];
-  const allA = [...d.scoresA, d.avgA];
-  const allB = [...d.scoresB, d.avgB];
-  const n = allTimes.length;
-
-  const PAD = 60, BAR_H = 36, GAP = 16, GROUP_GAP = 28;
-  const totalH = PAD + n * (BAR_H * 2 + GAP + GROUP_GAP) + PAD;
-  const W = 680, H = totalH;
-
-  const canvas = document.createElement("canvas");
-  canvas.width  = W * 2; // retina
-  canvas.height = H * 2;
-  canvas.style.width  = W + "px";
-  canvas.style.height = H + "px";
-  const ctx = canvas.getContext("2d");
-  ctx.scale(2, 2);
-
-  // Background
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, W, H);
-
-  // Title
-  ctx.fillStyle = "#1a1a2e";
-  ctx.font = "bold 14px sans-serif";
-  ctx.fillText("🔀 RAKSHAK Route Comparison", PAD, 28);
-  ctx.fillStyle = "#666";
-  ctx.font = "11px sans-serif";
-  ctx.fillText(`A: ${d.labelA}  vs  B: ${d.labelB}  ·  Weather: ${d.weather}`, PAD, 46);
-
-  // Legend
-  ctx.fillStyle = "#27ae60";
-  ctx.fillRect(W - 160, 18, 14, 14);
-  ctx.fillStyle = "#333";
-  ctx.font = "11px sans-serif";
-  ctx.fillText("Safer / Lower risk", W - 142, 30);
-  ctx.fillStyle = "#e74c3c";
-  ctx.fillRect(W - 160, 36, 14, 14);
-  ctx.fillStyle = "#333";
-  ctx.fillText("Higher risk", W - 142, 48);
-
-  const chartLeft = PAD + 90;
-  const chartW = W - chartLeft - PAD;
-
-  allTimes.forEach((label, i) => {
-    const sa = allA[i], sb = allB[i];
-    const isAvg = i === n - 1;
-    const y = PAD + 20 + i * (BAR_H * 2 + GAP + GROUP_GAP);
-
-    // Time label
-    ctx.fillStyle = isAvg ? "#1a1a2e" : "#555";
-    ctx.font = isAvg ? "bold 12px sans-serif" : "12px sans-serif";
-    ctx.textAlign = "right";
-    ctx.fillText(label, chartLeft - 8, y + BAR_H / 2 + 4);
-    ctx.textAlign = "left";
-
-    // Separator for average row
-    if (isAvg) {
-      ctx.strokeStyle = "#ddd";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(chartLeft, y - 10);
-      ctx.lineTo(W - PAD, y - 10);
-      ctx.stroke();
-    }
-
-    // Determine safer
-    const saferIsA = sa <= sb;
-
-    // Route A bar
-    const wA = Math.round((sa / 100) * chartW);
-    const colorA = saferIsA ? "#27ae60" : "#e74c3c";
-    const bgA    = saferIsA ? "#e8f5e9" : "#fdecea";
-    ctx.fillStyle = bgA;
-    ctx.beginPath(); ctx.roundRect(chartLeft, y, chartW, BAR_H, 5); ctx.fill();
-    ctx.fillStyle = colorA;
-    ctx.beginPath(); ctx.roundRect(chartLeft, y, wA, BAR_H, 5); ctx.fill();
-    ctx.fillStyle = "#fff";
-    ctx.font = "bold 11px sans-serif";
-    ctx.fillText(`A: ${sa}/100`, chartLeft + 8, y + BAR_H / 2 + 4);
-
-    // Route B bar
-    const yB = y + BAR_H + GAP;
-    const wB = Math.round((sb / 100) * chartW);
-    const colorB = !saferIsA ? "#27ae60" : "#e74c3c";
-    const bgB    = !saferIsA ? "#e8f5e9" : "#fdecea";
-    ctx.fillStyle = bgB;
-    ctx.beginPath(); ctx.roundRect(chartLeft, yB, chartW, BAR_H, 5); ctx.fill();
-    ctx.fillStyle = colorB;
-    ctx.beginPath(); ctx.roundRect(chartLeft, yB, wB, BAR_H, 5); ctx.fill();
-    ctx.fillStyle = "#fff";
-    ctx.font = "bold 11px sans-serif";
-    ctx.fillText(`B: ${sb}/100`, chartLeft + 8, yB + BAR_H / 2 + 4);
-  });
-
-  // Footer
-  ctx.fillStyle = "#aaa";
-  ctx.font = "10px sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(`Generated by RAKSHAK v7 · ${new Date().toLocaleString("en-IN")}  ·  Green = safer  ·  Red = higher risk`, W / 2, H - 12);
-
-  // Download
-  const link = document.createElement("a");
-  link.download = `RAKSHAK_Compare_${Date.now()}.png`;
-  link.href = canvas.toDataURL("image/png");
-  link.click();
-  showToast("📊 Chart downloaded as PNG!");
 }
 
 /* ════════════════════════════════════════════
