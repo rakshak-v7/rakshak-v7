@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RAKSHAK v7 – Hyderabad Accident Zone Detector</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 4 L58 14 L58 32 C58 46 46 56 32 60 C18 56 6 46 6 32 L6 14 Z' fill='%23C0392B'/%3E%3Cpath d='M32 10 L52 18 L52 32 C52 43 43 51 32 55 C21 51 12 43 12 32 L12 18 Z' fill='%23922B21'/%3E%3Ctext x='32' y='42' font-size='24' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3ER%3C/text%3E%3C/svg%3E"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    @keyframes pulse-ring {
+      0%   { transform: scale(1);   opacity: 0.6; }
+      100% { transform: scale(2.5); opacity: 0; }
+    }
+    .ticker-bar {
+      background: linear-gradient(90deg, #1a1a2e 0%, #16213e 100%);
+      color: #e0e0e0; font-size: 12px; font-family: var(--font);
+      padding: 7px 20px; display: flex; align-items: center;
+      gap: 12px; overflow: hidden; border-bottom: 1px solid #333;
+    }
+    .ticker-label {
+      background: var(--accent); color: #fff; font-size: 10px;
+      font-weight: 700; padding: 2px 8px; border-radius: 4px;
+      white-space: nowrap; letter-spacing: 0.5px; flex-shrink: 0;
+    }
+    #incidentTicker { flex: 1; transition: opacity 0.4s ease; }
+
+    .sos-btn {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: #fff; border: none; border-radius: 50%;
+      width: 52px; height: 52px; font-size: 11px; font-weight: 700;
+      font-family: var(--font); cursor: pointer;
+      box-shadow: 0 0 0 4px rgba(192,57,43,0.25), 0 4px 16px rgba(192,57,43,0.5);
+      animation: sos-pulse 2s ease-in-out infinite;
+      letter-spacing: 0.5px; flex-shrink: 0;
+    }
+    .sos-btn:hover { transform: scale(1.08); }
+    @keyframes sos-pulse {
+      0%, 100% { box-shadow: 0 0 0 4px rgba(192,57,43,0.25), 0 4px 16px rgba(192,57,43,0.5); }
+      50%       { box-shadow: 0 0 0 10px rgba(192,57,43,0.08), 0 4px 20px rgba(192,57,43,0.4); }
+    }
+
+    .time-selector {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+      margin-bottom: 12px; background: var(--surface);
+      border: 1.5px solid var(--border); border-radius: var(--radius);
+      padding: 10px 14px;
+    }
+    .time-selector-label {
+      font-size: 12px; font-weight: 600; color: var(--text2);
+      text-transform: uppercase; letter-spacing: 0.8px; margin-right: 4px; white-space: nowrap;
+    }
+    .time-btn {
+      background: var(--surface2); border: 1.5px solid var(--border);
+      color: var(--text2); border-radius: 20px; padding: 6px 14px;
+      font-size: 12px; font-family: var(--font); font-weight: 500;
+      cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .time-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .time-btn.active {
+      background: var(--accent); border-color: var(--accent);
+      color: #fff; font-weight: 600; box-shadow: 0 2px 10px var(--accent-glow);
+    }
+    .time-note { font-size: 11px; color: var(--text3); font-style: italic; margin-left: 4px; flex-basis: 100%; margin-top: 4px; }
+    .risk-time-note {
+      font-size: 11px; color: var(--text3); margin-top: 6px;
+      padding: 6px 10px; background: var(--surface2);
+      border-radius: 8px; border: 1px solid var(--border);
+    }
+
+    .traffic-btn, .heatmap-btn {
+      background: var(--surface2); border: 1.5px solid var(--border);
+      color: var(--text2); border-radius: 20px; padding: 6px 14px;
+      font-size: 12px; font-family: var(--font); font-weight: 500; cursor: pointer; transition: all 0.2s;
+    }
+    .traffic-btn.active { background: #1a3a5c; color: #79c0ff; border-color: #1f6feb; }
+    .heatmap-btn.active { background: #3d1a1a; color: #ff8a7a; border-color: #e74c3c; }
+
+    .stats-bar {
+      display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px;
+      padding: 12px 16px; background: var(--surface);
+      border: 1.5px solid var(--border); border-radius: var(--radius);
+    }
+    .stat-chip { display: flex; flex-direction: column; align-items: center; min-width: 70px; }
+    .stat-num { font-size: 20px; font-weight: 700; color: var(--accent); line-height: 1; }
+    .stat-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+    #panel-history { padding: 20px 24px; }
+    .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .history-title  { font-size: 18px; font-weight: 600; color: var(--text); }
+    .btn-ghost {
+      background: transparent; border: 1.5px solid var(--border);
+      color: var(--text2); border-radius: 8px; padding: 6px 14px;
+      font-size: 12px; font-family: var(--font); cursor: pointer;
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+    .formula-note {
+      margin-top: 14px; font-size: 11px; color: var(--text3);
+      line-height: 1.7; padding: 12px 16px; background: var(--surface2);
+      border-radius: var(--radius); border: 1px solid var(--border);
+    }
+    .formula-note b { color: var(--text2); }
+  </style>
+</head>
+<body>
+
+  <!-- INCIDENT TICKER -->
+  <div class="ticker-bar">
+    <span class="ticker-label">🔴 LIVE</span>
+    <span id="incidentTicker">Loading live Hyderabad traffic incidents…</span>
+  </div>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-logo">
+      <span class="logo-icon">🛡️</span>
+      <div class="logo-text">
+        <span class="logo-name">RAKSHAK</span>
+        <span class="logo-sub">Hyderabad Road Safety · 25 Verified Hotspots · v7</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="sos-btn" onclick="triggerSOS()" title="Emergency SOS">🆘 SOS</button>
+      <button class="mode-toggle" id="modeBtn" onclick="toggleMode()">🌙 Dark Mode</button>
+      <div class="lang-wrapper" id="langWrapper">
+        <button class="lang-btn" id="langBtn" onclick="toggleLangMenu()">
+          🌐 <span id="langLabel">English</span> ▾
+        </button>
+        <div class="lang-menu" id="langMenu">
+          <button data-lang="en" onclick="setLang('en')" class="selected">🇬🇧 English</button>
+          <button data-lang="hi" onclick="setLang('hi')">🇮🇳 हिन्दी</button>
+          <button data-lang="te" onclick="setLang('te')">🏛️ తెలుగు</button>
+          <button data-lang="ta" onclick="setLang('ta')">🌺 தமிழ்</button>
+          <button data-lang="kn" onclick="setLang('kn')">✨ ಕನ್ನಡ</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" id="tab-map"     onclick="switchTab('map')">🗺️ Map &amp; Route</button>
+    <button class="tab-btn"        id="tab-zones"   onclick="switchTab('zones')">⚠️ Danger Zones</button>
+    <button class="tab-btn"        id="tab-history" onclick="switchTab('history')">📊 My History</button>
+    <!-- 4th Compare tab injected by JS -->
+  </nav>
+
+  <!-- ════ TAB 1: MAP ════ -->
+  <section class="panel" id="panel-map">
+
+    <!-- STATS BAR -->
+    <div class="stats-bar">
+      <div class="stat-chip">
+        <span class="stat-num" id="stat-blackspots">0</span>
+        <span class="stat-label">Black Spots</span>
+      </div>
+      <div class="stat-chip">
+        <span class="stat-num" id="stat-highrisk">0</span>
+        <span class="stat-label">High Risk</span>
+      </div>
+      <div class="stat-chip">
+        <span class="stat-num" id="stat-accidents">0</span>
+        <span class="stat-label">Accidents 2025</span>
+      </div>
+      <div class="stat-chip">
+        <span class="stat-num">NH-65</span>
+        <span class="stat-label">Deadliest Road</span>
+      </div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+        <button class="heatmap-btn" id="heatmapBtn" onclick="toggleHeatmap()">🔥 Heatmap</button>
+        <button class="traffic-btn" id="trafficBtn" data-on="0" onclick="toggleTraffic()">🚦 Show Traffic</button>
+      </div>
+    </div>
+
+    <!-- TIME SELECTOR -->
+    <div class="time-selector">
+      <span class="time-selector-label">⏰ Travel Time:</span>
+      <button class="time-btn" data-time="morning"   onclick="setTime('morning')">🌅 Morning</button>
+      <button class="time-btn" data-time="afternoon" onclick="setTime('afternoon')">☀️ Afternoon</button>
+      <button class="time-btn active" data-time="evening" onclick="setTime('evening')">🌆 Evening</button>
+      <button class="time-btn" data-time="night"     onclick="setTime('night')">🌙 Night</button>
+      <span class="time-note" id="timeNote">⚠️ Peak accident window — IT exits, high speed, congestion</span>
+    </div>
+
+    <!-- ROUTE BAR -->
+    <div class="route-bar">
+      <div class="input-group">
+        <span class="input-icon">🟢</span>
+        <input type="text" id="start" class="route-input"
+          placeholder="Start location…" autocomplete="off"/>
+      </div>
+      <div class="input-group">
+        <span class="input-icon">🔴</span>
+        <input type="text" id="end" class="route-input"
+          placeholder="Destination…" autocomplete="off"/>
+      </div>
+      <button class="btn-primary" id="findBtn" onclick="findRoute()">🔍 Find Route</button>
+      <button class="btn-secondary" id="myLocBtn" onclick="useMyLocation()">📍 My Location</button>
+    </div>
+
+    <!-- HINT -->
+    <div style="font-size:11px;color:var(--text3);margin-bottom:8px;padding:0 2px;">
+      💡 Try: <b>Abids</b>, <b>ORR 144</b>, <b>Madina</b>, <b>Secunderabad</b>, <b>Punjagutta</b> — all hotspot names supported
+    </div>
+
+    <div class="loading-bar" id="loader"></div>
+    <div id="map"></div>
+
+    <!-- RISK CARD -->
+    <div class="risk-card" id="riskCard">
+      <div class="risk-card-header">
+        <span class="risk-card-title" id="riskCardTitle">🤖 AI Route Risk Score</span>
+        <span class="risk-badge-pill" id="riskPill">–</span>
+      </div>
+      <div class="risk-score-row">
+        <span class="risk-big-num" id="riskNum">–</span>
+        <div class="risk-bar-track">
+          <div class="risk-bar-fill" id="riskBarFill"></div>
+        </div>
+        <span class="risk-pct" id="riskPct">–</span>
+      </div>
+      <p class="risk-message"  id="riskMessage"></p>
+      <p class="risk-time-note" id="riskTimeNote"></p>
+      <p class="risk-zones-hit" id="riskZonesHit"></p>
+    </div>
+
+    <div class="formula-note">
+      <b>📐 AI Score Formula v7 — Real-Time:</b>
+      Proximity-weighted hotspot density (800m radius, power-1.8 falloff)
+      × <b>Gaussian time multiplier</b> (smooth curve peaking at 8AM ×1.50 &amp; 6PM ×1.55)
+      + zone-count bonus (+6/zone, max +24) + high-weight bonus (+8 if weight≥9)
+      + weekday congestion bonus (AM rush +6, PM rush +8)
+      × day-of-week factor (Fri ×1.20, weekend night +0.25)
+      × <b>live weather</b> (Open-Meteo API — storm ×1.50, rain ×1.25, fog ×1.30)
+      + route sinuosity v2 (highway +10, dense city −3)
+      + holiday factor (day 0.90, night 1.20)
+      → clamped [15, 100] · auto-refreshes every 5 min.<br>
+      <b>📎 Sources:</b> TSCTSL Incident DB · ACCO 2024 · NH-65 Accident Records · The Hindu ORR Audit · ToI IT Corridor Report (2024–2026).
+    </div>
+  </section>
+
+  <!-- ════ TAB 2: DANGER ZONES ════ -->
+  <section class="panel hidden" id="panel-zones">
+    <div class="zones-header">
+      <h2 class="zones-title" id="zonesTitle">⚠️ Accident Prone Zones — Hyderabad (2024–2026)</h2>
+      <p class="zones-subtitle" id="zonesSub">
+        25 verified black spots from TSCTSL traffic incident data, ACCO national report,
+        NH-65 accident records, and Hyderabad traffic police zone reports.
+      </p>
+    </div>
+    <div class="zones-grid" id="zonesGrid"></div>
+  </section>
+
+  <!-- ════ TAB 3: HISTORY ════ -->
+  <section class="hidden" id="panel-history">
+    <div class="history-header">
+      <h2 class="history-title">📊 Route History &amp; Safety Log</h2>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-ghost" onclick="exportRouteXLS()">📥 Export All XLS</button>
+        <button class="btn-ghost" onclick="clearHistory()">🗑️ Clear</button>
+      </div>
+    </div>
+    <div id="historyBody" style="font-size:13px;color:var(--text2);"></div>
+  </section>
+
+  <!-- VOICE TOAST -->
+  <div class="toast" id="toast">
+    <span class="toast-icon">🔊</span>
+    <span class="toast-msg" id="toastMsg"></span>
+  </div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  window.addEventListener("load", function() {
+    if (typeof L === "undefined") {
+      document.getElementById("map").innerHTML =
+        '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:14px;color:#888">Map unavailable — check internet connection</div>';
+    }
+  });
+</script>
+<script src="script.js"></script>
+</body>
+</html>
